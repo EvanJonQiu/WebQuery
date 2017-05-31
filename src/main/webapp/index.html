@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Insert title here</title>
+    
+    <!-- Bootstrap css-->
+    <link href="./js/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <!-- custom css -->
+    <link href="./css/webquery.css" rel="stylesheet">
+    <!-- jquery -->
+    <script src="./js/jquery/jquery-3.2.1.min.js"></script>
+    <!-- bootstrap -->
+    <script src="./js/bootstrap-3.3.7-dist/js/bootstrap.min.js"></script>
+    
+    <!-- plugins -->
+    <!-- jqplot -->
+    <link href="./js/plugins/jquery.jqplot/jquery.jqplot.css" rel="stylesheet" type="text/css">
+    <script src="./js/plugins/jquery.jqplot/jquery.jqplot.js"></script>
+    
+    <script src="./js/plugins/jquery.jqplot/plugins/jqplot.barRenderer.js"></script>
+    <script src="./js/plugins/jquery.jqplot/plugins/jqplot.categoryAxisRenderer.js"></script>
+    <script src="./js/plugins/jquery.jqplot/plugins/jqplot.pointLabels.js"></script>
+    <script src="./js/plugins/jquery.jqplot/plugins/jqplot.canvasTextRenderer.js"></script>
+    <script src="./js/plugins/jquery.jqplot/plugins/jqplot.canvasAxisTickRenderer.js"></script>
+    <script src="./js/plugins/jquery.jqplot/plugins/jqplot.dateAxisRenderer.js"></script>
+    
+    <!-- jqChart -->
+    <link href="./js/plugins/jqChartJQueryPlugin/css/jquery.jqChart.css" rel="stylesheet" type="text/css">
+    <link href="./js/plugins/jqChartJQueryPlugin/css/jquery.jqRangeSlider.css" rel="stylesheet" type="text/css">
+    <link href="./js/plugins/jqChartJQueryPlugin/themes/smoothness/jquery-ui-1.10.4.min.css" rel="stylesheet" type="text/css">
+    
+    <script src="./js/plugins/jqChartJQueryPlugin/js/jquery.mousewheel.js"></script>
+    <script src="./js/plugins/jqChartJQueryPlugin/js/jquery.jqChart.min.js"></script>
+    <script src="./js/plugins/jqChartJQueryPlugin/js/jquery.jqRangeSlider.min.js"></script>
+    
+    <script type="text/javascript">
+     var plot1 = null;
+     var plot2 = null;
+     
+     $(document).ready(function() {
+       $("#queryButton").click(function() {
+
+    	 var key = $("#queryInput").val();
+         if (key == undefined || key == "") {
+           alert("please input a word!");
+           return;
+         }
+         
+         simpleQuery();
+         showChart1();
+         showChart2();
+         showChart3();
+       });
+       
+       function showChart3() {
+         var key = $("#queryInput").val();
+         
+         $.ajax({
+           url: 'query/queryNewSourceGroup.do',
+           type: 'POST',
+           data: {key: key},
+           async: true,
+           dataType: 'json',
+           success: function(data) {
+             processChart3(data);
+           },
+           error: function(e) {
+             alert(e.message);
+           }
+         });
+       }
+       
+       function processChart3(data) {
+         var groupData = data.data;
+         var s1 = [];
+         var ticks = [];
+         
+         for (var i = 0; i < groupData.length; i++) {
+           if (groupData[i].count > 20) {
+            s1.push(groupData[i].count);
+            ticks.push(groupData[i].newSource);
+           }
+         }
+         
+         var background = {
+             type: 'linearGradient',
+             x0: 0,
+             y0: 0,
+             x1: 0,
+             y1: 1,
+             colorStops: [{ offset: 0, color: '#d2e6c9' },
+                          { offset: 1, color: 'white'}]
+         };
+         
+         $("#chart3").jqChart({
+           title: { text: '新闻来源' },
+           border: { strokeStyle: '#6ba851' },
+           background: background,
+           axes: [
+             {
+                 type: 'categoryAngle',
+                 categories: ticks
+             },
+             {
+                 type: 'linearRadius',
+                 renderStyle: 'polygon',
+                 majorTickMarks: { visible: true }
+             }
+           ],
+           series: [
+             {
+                 title : '新闻来源',
+                 type: 'radarArea',
+                 data: s1,
+                 fillStyle: 'rgba(65,140,240,0.75)'
+             }
+           ]
+         });
+       }
+
+       function showChart2() {
+    	   var key = $("#queryInput").val();
+         
+         $.ajax({
+           url: 'query/queryNewSourceGroup.do',
+           type: 'POST',
+           data: {key: key},
+           async: true,
+           dataType: 'json',
+           success: function(data) {
+             processChart2(data);
+           },
+           error: function(e) {
+             alert(e.message);
+           }
+         });
+       }
+
+       function processChart2(data) {
+         var groupData = data.data;
+         var s1 = [];
+         var ticks = [];
+         
+         for (var i = 0; i < groupData.length; i++) {
+           if (groupData[i].count > 20) {
+	           s1.push(groupData[i].count);
+	           ticks.push(groupData[i].newSource);
+           }
+         }
+
+         if (plot2) {
+           plot2 = $.jqplot('chart2', [s1], {
+             seriesDefaults:{
+               renderer:$.jqplot.BarRenderer,
+               rendererOptions: {
+                 fillToZero: true,
+                 varyBarColor: true
+               }
+             },
+             series:[
+               {label:'文章来源'}
+             ],
+             axes: {
+               xaxis: {
+                 renderer: $.jqplot.CategoryAxisRenderer,
+                 ticks: ticks
+               },
+               yaxis: {
+                 pad: 1.05,
+                 tickOptions: {formatString: '%d'}
+               }
+             }
+           }).replot();
+         } else {
+           plot2 = $.jqplot('chart2', [s1], {
+             seriesDefaults:{
+               renderer:$.jqplot.BarRenderer,
+               rendererOptions: {
+                 fillToZero: true,
+                 varyBarColor: true
+               }
+             },
+             series:[
+               {label:'文章来源'}
+             ],
+             axes: {
+               xaxis: {
+                 renderer: $.jqplot.CategoryAxisRenderer,
+                 ticks: ticks
+               },
+               yaxis: {
+                 pad: 1.05,
+                 tickOptions: {formatString: '%d'}
+               }
+             }
+           });
+         }
+       }
+       
+       function showChart1() {
+         var key = $("#queryInput").val();
+         
+         $.ajax({
+           url: 'query/queryMonthGroup.do',
+           type: 'POST',
+           data: {key: key},
+           async: true,
+           dataType: 'json',
+           success: function(data) {
+             processChart1(data);
+           },
+           error: function(e) {
+             alert(e.message);
+           }
+         });
+       }
+
+       function processChart1(data) {
+         var groupData = data.data;
+         var s1 = [];
+         var ticks = [];
+         
+         for (var i = 0; i < groupData.length; i++) {
+           s1.push(groupData[i].count);
+           ticks.push(groupData[i].groupMonth);
+         }
+
+         if (plot1) {
+           plot1 = $.jqplot('chart1', [s1], {
+             seriesDefaults:{
+               renderer:$.jqplot.BarRenderer,
+               rendererOptions: {
+                 fillToZero: true,
+                 varyBarColor: true
+               }
+             },
+             series:[
+               {label:'文章个数'}
+             ],
+             axes: {
+               xaxis: {
+                 renderer: $.jqplot.CategoryAxisRenderer,
+                 ticks: ticks
+               },
+               yaxis: {
+                 pad: 1.05,
+                 tickOptions: {formatString: '%d'}
+               }
+             }
+           }).replot();
+         } else {
+           plot1 = $.jqplot('chart1', [s1], {
+             seriesDefaults:{
+               renderer:$.jqplot.BarRenderer,
+               rendererOptions: {
+                 fillToZero: true,
+                 varyBarColor: true
+               }
+             },
+             series:[
+               {label:'文章个数'}
+             ],
+             axes: {
+               xaxis: {
+                 renderer: $.jqplot.CategoryAxisRenderer,
+                 ticks: ticks
+               },
+               yaxis: {
+                 pad: 1.05,
+                 tickOptions: {formatString: '%d'}
+               }
+             }
+           });
+         }
+       }
+       
+       function simpleQuery() {
+         $("#resultTable").empty();
+         var key = $("#queryInput").val();
+         $.ajax({
+           url: 'query/booleanQuery.do',
+           type: 'POST',
+           data: {key: key},
+           async: true,
+           dataType: 'json',
+           success: function(data) {
+             $("#resultTable").append("<tbody>");
+             for (var i = 0; i < 5; i++) {
+               $("#resultTable").append("<tr><td>" + data.data[i]["title"] + "</td></tr>");
+             }
+             $("#resultTable").append("</tbody>");
+           },
+           error: function(e) {
+             alert(e.message);
+           }
+         });
+       }
+     });
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="form-group">
+        <input class="form-control" id="queryInput" type="text" value="朴槿惠">
+      </div>
+      <div class="form-group">
+        <button class="btn btn-default" id="queryButton">Search</button>
+      </div>
+    </div>
+    <!-- result panel -->
+    <div class="container">
+      <div class="row">
+        <div class="col-xs-6">
+          <table id="resultTable" class="table">
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+        <div class="col-xs-6">
+          <div id="chart1" style="width:500px; height:250px;"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-6">
+          <div id="chart2" style="width:500px; height:250px;"></div>
+        </div>
+        <div class="col-xs-6">
+          <div id="chart3" style="width:500px; height:250px;"></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
